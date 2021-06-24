@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="robots" content="all" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>TOM FINANCE</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="../images/common/favicon/apple-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="../images/common/favicon/apple-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/common/favicon/apple-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="../images/common/favicon/apple-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/common/favicon/apple-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="../images/common/favicon/apple-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="../images/common/favicon/apple-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="../images/common/favicon/apple-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/common/favicon/apple-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/common/favicon/android-icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/common/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="../images/common/favicon/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/common/favicon/favicon-16x16.png" />
+    <link rel="manifest" href="../images/common/favicon/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="../images/common/favicon/ms-icon-144x144.png" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css?v=2021010801" />
+    <script src="../js/vendor.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="https://unpkg.com/web3@latest/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js"></script>
+    <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script>
+      Number.prototype.format = function () {
+        if (this == 0) return 0;
+
+        var reg = /(^[+-]?\d+)(\d{3})/;
+        var n = this + '';
+
+        while (reg.test(n)) n = n.replace(reg, '$1' + ',' + '$2');
+
+        return n;
+      };
+
+      String.prototype.format = function () {
+        var num = parseFloat(this);
+        if (isNaN(num)) return '0';
+
+        return num.format();
+      };
+
+      var setCookie = function (name, value, exp) {
+        var date = new Date();
+        date.setTime(date.getTime() + exp * 24 * 60 * 60 * 1000);
+        document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+      };
+
+      var getCookie = function (name) {
+        var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return value ? value[2] : null;
+      };
+
+      if (getCookie('metamask') == 'true') {
+        // loginCookie
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        getAccount();
+        getTotalSupply();
+      }
+
+      function connectWallet() {
+        // connectWallet
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        window.ethereum
+          .enable()
+          .then(function () {
+            setCookie('metamask', 'true', 1);
+            getAccount();
+            getTotalSupply();
+          })
+          .catch((error) => {
+            // User denied account access
+            console.log(error);
+          });
+      }
+
+      function getAccount() {
+        //getAccount
+
+        console.log(window.ethereum);
+        web34.eth.getAccounts(function (err, r) {
+          console.log(err, r);
+          console.log('log=' + r[0]);
+          getBalance(r[0]);
+          let account_length = r[0].length;
+          let account_1 = r[0].substring(0, 4);
+          let account_2 = r[0].substring(account_length - 4, account_length);
+          document.getElementById('account_addr').innerHTML = account_1 + '...' + account_2;
+        });
+      }
+
+      // TOM ABI and Address
+      const COF_ABI = [
+        {
+          inputs: [
+            { internalType: 'string', name: 'name', type: 'string' },
+            { internalType: 'string', name: 'symbol', type: 'string' },
+            { internalType: 'uint8', name: 'decimals', type: 'uint8' },
+            { internalType: 'uint256', name: 'totalSupply', type: 'uint256' },
+          ],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'constructor',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'owner', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'spender', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Approval',
+          type: 'event',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'from', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'to', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Transfer',
+          type: 'event',
+        },
+        {
+          constant: true,
+          inputs: [
+            { internalType: 'address', name: 'owner', type: 'address' },
+            { internalType: 'address', name: 'spender', type: 'address' },
+          ],
+          name: 'allowance',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+          name: 'balanceOf',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'decimals',
+          outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'subtractedValue', type: 'uint256' },
+          ],
+          name: 'decreaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'addedValue', type: 'uint256' },
+          ],
+          name: 'increaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'name',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'symbol',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'totalSupply',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transfer',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'sender', type: 'address' },
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transferFrom',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+      ];
+      const COF_ADDRESS = '0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc';
+
+      function getBalance(account) {
+        //getAccountBalance
+        const transactionObject = new web3.eth.Contract(COF_ABI, COF_ADDRESS);
+
+        transactionObject.methods
+          .balanceOf(account)
+          .call()
+          .then((res) => {
+            console.log(res);
+            balance_res = web3.utils.fromWei(res, 'ether');
+            console.log(balance_res);
+            // balance_res= Math.floor(balance_res * 10000)/10000
+            balance_res = Number(balance_res).toFixed(8);
+            console.log('hi' + balance_res);
+            document.getElementById('account_balance').innerHTML = balance_res.format();
+          });
+      }
+
+      function getTotalSupply() {
+        //getTotalSupply
+        web34.eth.getBlockNumber().then((res) => {
+          console.log('current block num = ' + res);
+          let createBlock = res - 11234809; // CurrentBlock - startBlock
+          console.log('current block num = ' + createBlock);
+          let supply = createBlock * 0.0558;
+          console.log('current block num = ' + supply);
+          supply = Number(supply).toFixed(8);
+          if (supply > 0) {
+            document.getElementById('totalSupply').innerHTML = supply.format();
+          } else {
+            document.getElementById('totalSupply').innerHTML = '0';
+          }
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="wrap" class="index">
+      <header>
+        <div class="h_inner">
+          <h1><a href="index.html">TOM FINANCE</a></h1>
+          <nav>
+            <button type="button" class="gnb-menu">
+              <span>navigation</span>
+              <span>menu</span>
+              <span>open/close</span>
+            </button>
+            <div class="mb_hidden">
+              <ul>
+                <li class="on"><a href="index.html">HOME</a></li>
+                <li><a href="farm.html">FARM</a></li>
+                <li><a href="https://medium.com/defi-tom/tom-touch-of-midas-finance-liquidity-mining-80e9e720cdd3" rel="noopener noreferrer">ABOUT</a></li>
+              </ul>
+              <div class="h_utills">
+                <!-- <div class="lang">
+                  <a href="#;" class="cnt en">EN</a>
+                  <div>
+                    <a href="#;" class="ko">KO</a>
+                    <a href="#;" class="cn">CN</a>
+                    <a href="ㅑ" class="en">EN</a>
+                  </div>
+                </div> -->
+                <a href="#;" class="btn btn_color-primary btn_round-medium1 btn_wallet" id="account_addr" onclick="connectWallet()">Unlock Wallet</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </header>
+      <main id="container">
+        <div class="wcontent page_top">
+          <div class="wcontent_inner">
+            <figure class="page_top_visual">
+              <img src="../images/content/visual.svg" alt="TOM FINANCE" />
+            </figure>
+            <p class="page_top_message">
+              <img src="../images/content/page_top_message_index@3x.png" alt="Keep TOM happy!" />
+            </p>
+            <p class="page_top_text">Stake LP tokens to get TOM!</p>
+          </div>
+        </div>
+        <div class="content">
+          <div class="roundbox tom_status_index">
+            <div class="roundbox-incolumn">
+              <span class="roundbox-incolumn_label">My TOM Balance</span>
+              <strong class="tom_status-my" id="account_balance">-</strong>
+              <!-- <div class="tom_status_info">
+                <span>Pending harvest</span>
+                <i>0.000</i>
+              </div> -->
+            </div>
+            <div class="roundbox-incolumn">
+              <span class="roundbox-incolumn_label">Current Total supply</span>
+              <strong class="tom_status-total" id="totalSupply">-</strong>
+              <!-- <div class="tom_status_info">
+                <span>APY</span>
+                <i>10 TOM2</i>
+              </div> -->
+            </div>
+          </div>
+          <div class="btn_box">
+            <a href="farm.html" class="btn btn_color-primary btn_round-large btn-index1"><span>See the Touch of Midas Farm</span></a>
+          </div>
+          <div class="countdown-box">
+            <h3>NOTICE ON TOM FINANCE MINING POOL CLOSING</h3>
+            <p class="countdown-notice">
+              Please note that while TOM Mining was scheduled for 60 days, the closing of the mining pool has been delayed due to the Ethereum block generation.
+              <br />
+              Thank you for your understanding.
+            </p>
+            <div class="countdown">
+              <ul>
+                <li>
+                  <div id="countdown-days">00</div>
+                  <p>DAYS</p>
+                </li>
+                <li>
+                  <div id="countdown-hours">00</div>
+                  <p>HOURS</p>
+                </li>
+                <li>
+                  <div id="countdown-mins">00</div>
+                  <p>MINUTES</p>
+                </li>
+                <li>
+                  <div id="countdown-secs">00</div>
+                  <p>SECONDS</p>
+                </li>
+              </ul>
+            </div>
+            <p class="countdown-caution">
+              ※ Details on the closing of the mining time are available on the Etherscan block countdown page.<br />
+              ※ Participants must unstake their LP tokens staked on TOM FINANCE before the closing time to retrieve their TMTG and LBXC tokens. Please make sure
+              to unstake the LP tokens before the mining pool closes. We do not bear any responsibility for any losses that occurred from negligence on
+              unstaking.
+            </p>
+          </div>
+        </div>
+      </main>
+      <footer>
+        <a href="https://etherscan.io/address/0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc">Contract</a>
+        <a href="https://discord.gg/T7Xgc8f">Discord</a>
+        <a href="">Telegram</a>
+        <a href="https://twitter.com/defi_tom">Twitter</a>
+        <a href="https://github.com/TomFinance">Github</a>
+        <a href="TOM_Finance_Litepaper_Ver2.0.0.pdf" target="_blank">Docs</a>
+      </footer>
+    </div>
+    <style>
+      .box {
+        width: 40%;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 35px;
+        border: 2px solid #fff;
+        border-radius: 20px/50px;
+        background-clip: padding-box;
+        text-align: center;
+      }
+      .overlay {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        transition: opacity 500ms;
+        visibility: visible;
+        opacity: 1;
+      }
+      .overlay.closed {
+        visibility: hidden;
+        opacity: 0;
+      }
+
+      .popup {
+        margin: calc(50vh - 200px) auto;
+        padding: 40px;
+        background: #fff;
+        border-radius: 5px;
+        width: 30%;
+        position: relative;
+        transition: all 5s ease-in-out;
+      }
+
+      .popup h2 {
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 0;
+        color: #333;
+      }
+      .popup .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        transition: all 200ms;
+        font-size: 30px;
+        font-weight: bold;
+        text-decoration: none;
+        color: #333;
+      }
+      .popup .close:hover {
+        color: #06d85f;
+      }
+      .popup .content {
+        line-height: 1.5;
+        max-height: 30%;
+        overflow: auto;
+        margin: 40px auto 10px auto;
+        padding: 0px;
+      }
+
+      @media screen and (max-width: 700px) {
+        .box {
+          width: 70%;
+        }
+        .popup {
+          width: 70%;
+        }
+      }
+    </style>
+    <div id="popup1" class="overlay">
+      <div class="popup">
+        <h2>TOM Mining Closed</h2>
+        <a class="close" href="#">&times;</a>
+        <div class="content">
+          TOM token mining has ended on Jan. 13, 2021.<br />
+          <br />To participate in TOM2 token mining, go to TOMSwap platform.<br />
+          TOM2 mining will be conducted for 60 days, starting from Jan. 14.
+          <br />
+          <br />
+          Go to TOM2 mining <a href="http://www.tomswap.org/" target="_blank" rel="noopener noreferrer">http://www.tomswap.org/</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      $('.close').on('click', function (e) {
+        e.preventDefault();
+        $('.overlay').addClass('closed');
+      });
+    </script>
+
+    <!-- <script src="../js/countdown.js"></script>
+    <script>
+      // end block: 11646967
+      var dayToSec = 60 * 60 * 24 * 1000;
+      var hourToSec = 60 * 60 * 1000;
+      var minToSec = 60 * 1000;
+      var $days = $('#countdown-days');
+      var $hours = $('#countdown-hours');
+      var $mins = $('#countdown-mins');
+      var $secs = $('#countdown-secs');
+      var endDate = new Date(new Date().getTime() + countdownJson['result']['EstimateTimeInSec'] * 1000);
+
+      var interval = setInterval(function () {
+        var remained = endDate - new Date().getTime();
+        if (remained < 0) {
+          clearInterval(interval);
+        }
+        var days = Math.floor(remained / dayToSec);
+        var hours = Math.floor((remained - days * dayToSec) / hourToSec);
+        var mins = Math.floor((remained - days * dayToSec - hours * hourToSec) / minToSec);
+        var secs = Math.floor((remained - days * dayToSec - hours * hourToSec - mins * minToSec) / 1000);
+        $days.text(pad(days));
+        $hours.text(pad(hours));
+        $mins.text(pad(mins));
+        $secs.text(pad(secs));
+      }, 1000);
+
+      function pad(num) {
+        return num < 10 ? '0' + num : num;
+      }
+    </script> -->
+  </body>
+</html>

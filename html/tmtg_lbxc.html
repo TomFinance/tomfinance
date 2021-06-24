@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="robots" content="all" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>TOM FINANCE</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="../images/common/favicon/apple-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="../images/common/favicon/apple-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/common/favicon/apple-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="../images/common/favicon/apple-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/common/favicon/apple-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="../images/common/favicon/apple-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="../images/common/favicon/apple-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="../images/common/favicon/apple-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/common/favicon/apple-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/common/favicon/android-icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/common/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="../images/common/favicon/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/common/favicon/favicon-16x16.png" />
+    <link rel="manifest" href="../images/common/favicon/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="../images/common/favicon/ms-icon-144x144.png" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css?v=2020122101" />
+    <script src="../js/vendor.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="https://unpkg.com/web3@latest/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js"></script>
+    <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      Number.prototype.format = function () {
+        if (this == 0) return 0;
+
+        var reg = /(^[+-]?\d+)(\d{3})/;
+        var n = this + '';
+
+        while (reg.test(n)) n = n.replace(reg, '$1' + ',' + '$2');
+
+        return n;
+      };
+
+      String.prototype.format = function () {
+        var num = parseFloat(this);
+        if (isNaN(num)) return '0';
+
+        return num.format();
+      };
+
+      var myAccount;
+      var myLP;
+      var myStakedLP;
+
+      var setCookie = function (name, value, exp) {
+        var date = new Date();
+        date.setTime(date.getTime() + exp * 24 * 60 * 60 * 1000);
+        document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+      };
+
+      var getCookie = function (name) {
+        var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return value ? value[2] : null;
+      };
+
+      if (getCookie('metamask') == 'true') {
+        // loginCookie
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        getAccount();
+      }
+
+      function connectWallet() {
+        // connectWallet
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        window.ethereum
+          .enable()
+          .then(function () {
+            setCookie('metamask', 'true', 1);
+            getAccount();
+          })
+          .catch((error) => {
+            // User denied account access
+            console.log(error);
+          });
+      }
+
+      function getAccount() {
+        //getAccount
+        web34.eth.getAccounts(function (err, r) {
+          myAccount = r[0];
+          cof_eth_lp_Available(r[0]);
+          cof_eth_lp_StakeBalance(r[0]);
+          cof_earn(r[0]);
+          let account_length = r[0].length;
+          let account_1 = r[0].substring(0, 4);
+          let account_2 = r[0].substring(account_length - 4, account_length);
+          document.getElementById('account_addr').innerHTML = account_1 + '...' + account_2;
+        });
+      }
+
+      // TOM ABI and Address
+      const COF_ABI = [
+        {
+          inputs: [
+            { internalType: 'string', name: 'name', type: 'string' },
+            { internalType: 'string', name: 'symbol', type: 'string' },
+            { internalType: 'uint8', name: 'decimals', type: 'uint8' },
+            { internalType: 'uint256', name: 'totalSupply', type: 'uint256' },
+          ],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'constructor',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'owner', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'spender', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Approval',
+          type: 'event',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'from', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'to', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Transfer',
+          type: 'event',
+        },
+        {
+          constant: true,
+          inputs: [
+            { internalType: 'address', name: 'owner', type: 'address' },
+            { internalType: 'address', name: 'spender', type: 'address' },
+          ],
+          name: 'allowance',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+          name: 'balanceOf',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'decimals',
+          outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'subtractedValue', type: 'uint256' },
+          ],
+          name: 'decreaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'addedValue', type: 'uint256' },
+          ],
+          name: 'increaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'name',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'symbol',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'totalSupply',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transfer',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'sender', type: 'address' },
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transferFrom',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+      ];
+      const COF_ADDRESS = '0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc';
+
+      //TMTG/LXBC LP ABI and Address for get LP balance
+      const COF_ETH_ABI = [
+        {
+          inputs: [
+            { internalType: 'string', name: 'name', type: 'string' },
+            { internalType: 'string', name: 'symbol', type: 'string' },
+            { internalType: 'uint8', name: 'decimals', type: 'uint8' },
+            { internalType: 'uint256', name: 'totalSupply', type: 'uint256' },
+          ],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'constructor',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'owner', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'spender', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Approval',
+          type: 'event',
+        },
+        {
+          anonymous: false,
+          inputs: [
+            { indexed: true, internalType: 'address', name: 'from', type: 'address' },
+            { indexed: true, internalType: 'address', name: 'to', type: 'address' },
+            { indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
+          ],
+          name: 'Transfer',
+          type: 'event',
+        },
+        {
+          constant: true,
+          inputs: [
+            { internalType: 'address', name: 'owner', type: 'address' },
+            { internalType: 'address', name: 'spender', type: 'address' },
+          ],
+          name: 'allowance',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+          name: 'balanceOf',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'decimals',
+          outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'subtractedValue', type: 'uint256' },
+          ],
+          name: 'decreaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'spender', type: 'address' },
+            { internalType: 'uint256', name: 'addedValue', type: 'uint256' },
+          ],
+          name: 'increaseAllowance',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'name',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'symbol',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'totalSupply',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transfer',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [
+            { internalType: 'address', name: 'sender', type: 'address' },
+            { internalType: 'address', name: 'recipient', type: 'address' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          ],
+          name: 'transferFrom',
+          outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+      ];
+      const COF_ETH_ADDRESS = '0x25ea93b7432fed90758828691897901a30b4c7d9';
+
+      //TMTG/LXBC_POOL ABI and Address for stake, unstake, harvest
+      const COF_ETH_POOL_ABI = [
+        {
+          inputs: [
+            { internalType: 'string', name: '_name', type: 'string' },
+            { internalType: 'uint256', name: '_poolStart', type: 'uint256' },
+            { internalType: 'uint256', name: '_poolEnd', type: 'uint256' },
+            { internalType: 'uint256', name: '_rewardPerBlock', type: 'uint256' },
+            { internalType: 'address', name: '_rewardToken', type: 'address' },
+            { internalType: 'address', name: '_stakeToken', type: 'address' },
+            { internalType: 'address', name: '_teamPool', type: 'address' },
+          ],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'constructor',
+        },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'rate', type: 'uint256' }],
+          name: 'changeRewardRate',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'claimAllReward', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+          name: 'claimAndUnstake',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'emergencyExit', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryDeposit',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryExpectedReward',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryRemainReward',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'name',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'poolEnd',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'poolStart',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'rewardPerBlock',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'rewardToken',
+          outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+          name: 'stake',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'stakeToken',
+          outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'totalStaked',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'unstakeAll', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+      ];
+      const COF_ETH_POOL_ADDRESS = '0x2A70605e53a2a596E04df8A775E0e8C9fEd62F9a';
+
+      const COF = new web3.eth.Contract(COF_ABI, COF_ADDRESS);
+      const COF_ETH = new web3.eth.Contract(COF_ETH_ABI, COF_ETH_ADDRESS);
+      const COF_ETH_POOL = new web3.eth.Contract(COF_ETH_POOL_ABI, COF_ETH_POOL_ADDRESS);
+
+      function cof_eth_lp_StakeBalance(account) {
+        //get Staked LP
+        COF_ETH_POOL.methods
+          .inquiryDeposit(account)
+          .call()
+          .then((res1) => {
+            myStakeAmount = web3.utils.fromWei(res1.toString(), 'ether');
+            myStakedLP = myStakeAmount;
+            myStakeAmount = Number(myStakeAmount).toFixed(2);
+            // myStakeAmount= Math.floor(myStakeAmount * 10000)/10000
+            document.getElementById('Stake_LP').innerHTML = myStakeAmount.format();
+            document.getElementById('unstake_lp_balance').innerHTML = 'Available : ' + myStakedLP.format() + ' TMTG-LXBC UNI-V2 LP';
+          });
+      }
+      let harvestableTom = '0';
+
+      function cof_earn(account) {
+        //get Earned COF
+        COF_ETH_POOL.methods
+          .inquiryExpectedReward(account)
+          .call()
+          .then((res) => {
+            isApp();
+            harvestableTom = res;
+            if (harvestableTom !== '0') {
+              $('#harvestBtn').removeClass('is-disabled');
+            } else {
+              $('#harvestBtn').addClass('is-disabled');
+            }
+            res = web3.utils.fromWei(res.toString(), 'ether');
+            //res = Math.floor(res * 10000)/10000
+            res = Number(res).toFixed(8);
+            document.getElementById('COF_EARN').innerHTML = res.format();
+          });
+      }
+
+      function cof_harvest() {
+        if (harvestableTom == '0') {
+          return;
+        }
+        // harvest cof
+        console.log({
+          from: myAccount,
+          to: COF_ETH_POOL_ADDRESS,
+          data: COF_ETH_POOL.methods.claimAllReward().encodeABI(),
+        });
+        console.log(web3.eth.sendTransaction);
+        web34.eth.sendTransaction(
+          {
+            from: myAccount,
+            to: COF_ETH_POOL_ADDRESS,
+            data: COF_ETH_POOL.methods.claimAllReward().encodeABI(),
+            gas: 600000,
+          },
+          function (error, hash) {
+            console.log(hash);
+          }
+        );
+      }
+
+      function cof_eth_lp_stake() {
+        // stake cof_eth_LP
+        var amount = document.getElementById('stake_amount').value;
+        console.log(amount);
+        balance_number = web3.utils.toWei(amount, 'ether');
+        console.log(balance_number);
+        web34.eth.sendTransaction(
+          {
+            from: myAccount,
+            to: COF_ETH_POOL_ADDRESS,
+            data: COF_ETH_POOL.methods.stake(balance_number).encodeABI(),
+            gas: 600000,
+          },
+          function (error, hash) {
+            console.log(hash);
+          }
+        );
+      }
+
+      function cof_eth_lp_unstake() {
+        // unstake cof_eth_LP
+        var unstake_amount = document.getElementById('unstake_amount').value;
+        balance_number = web3.utils.toWei(unstake_amount, 'ether');
+        web34.eth.sendTransaction(
+          {
+            from: myAccount,
+            to: COF_ETH_POOL_ADDRESS,
+            data: COF_ETH_POOL.methods.claimAndUnstake(balance_number).encodeABI(),
+            gas: 600000,
+          },
+          function (error, hash) {
+            console.log(hash);
+          }
+        );
+      }
+
+      function cof_eth_lp_Available() {
+        COF_ETH.methods
+          .balanceOf(myAccount)
+          .call()
+          .then((res) => {
+            balance_res = web3.utils.fromWei(res, 'ether');
+            myLP = balance_res;
+            document.getElementById('lp_balance').innerHTML = 'Available : ' + balance_res.format() + ' TMTG-LXBC UNI-V2 LP';
+          });
+      }
+
+      function stake_max() {
+        document.getElementById('stake_amount').value = myLP;
+      }
+
+      function unstake_max() {
+        document.getElementById('unstake_amount').value = myStakedLP;
+      }
+
+      function approve() {
+        let totalSupply = '';
+        COF_ETH.methods
+          .totalSupply()
+          .call()
+          .then((res) => {
+            totalSupply = res.toString();
+            let hardcode = '11579208923731620370761773539538653991867424009385342192844';
+            web34.eth.sendTransaction(
+              {
+                from: myAccount,
+                to: COF_ETH_ADDRESS,
+                data: COF_ETH.methods.approve(COF_ETH_POOL_ADDRESS, hardcode).encodeABI(),
+                gas: 100000,
+              },
+              function (error, hash) {
+                console.log(hash);
+              }
+            );
+          });
+      }
+
+      var stakeAmount = setTimeout(checkStakeMy, 1000);
+      function checkStakeMy() {
+        isApp();
+        cof_earn(myAccount);
+        cof_eth_lp_StakeBalance(myAccount);
+        cof_eth_lp_Available();
+        //stake_max();
+        //unstake_max();
+        setTimeout(checkStakeMy, 10000);
+      }
+
+      function isApp() {
+        let inner_1 = '<a href="#;" class="btn btn_color-primary btn_round-medium2 btn_size-full" onclick="approve()"><span>Approve</span></a>';
+        let inner_2 =
+          '<a href="#stake_pop" class="btn btn_color-primary btn_round-medium2 btn_size-half btn_popup"><span>Stake</span></a>' +
+          '<a href="#unstake_pop" class="btn btn_color-primary btn_round-medium2 btn_size-half btn_popup"><span>Unstake</span></a>';
+        COF_ETH.methods
+          .allowance(myAccount, COF_ETH_POOL_ADDRESS)
+          .call()
+          .then((res) => {
+            console.log('approve ' + res);
+            if (res > 100) {
+              document.getElementById('isApp').innerHTML = inner_2;
+            } else {
+              document.getElementById('isApp').innerHTML = inner_1;
+            }
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <div id="wrap" class="sub">
+      <header>
+        <div class="h_inner">
+          <h1><a href="index.html">TOM FINANCE</a></h1>
+          <nav>
+            <button type="button" class="gnb-menu">
+              <span>navigation</span>
+              <span>menu</span>
+              <span>open/close</span>
+            </button>
+            <div class="mb_hidden">
+              <ul>
+                <li><a href="index.html">HOME</a></li>
+                <li><a href="farm.html">FARM</a></li>
+                <li><a href="https://medium.com/defi-tom/tom-touch-of-midas-finance-liquidity-mining-80e9e720cdd3" rel="noopener noreferrer">ABOUT</a></li>
+              </ul>
+              <div class="h_utills">
+                <!-- <div class="lang">
+                  <a href="#;" class="cnt en">EN</a>
+                  <div>
+                    <a href="#;" class="ko">KO</a>
+                    <a href="#;" class="cn">CN</a>
+                    <a href="#;" class="en">EN</a>
+                  </div>
+                </div> -->
+                <a href="#;" class="btn btn_color-primary btn_round-medium1 btn_wallet" id="account_addr" onclick="connectWallet()">Unlock Wallet</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </header>
+      <main id="container">
+        <div class="wcontent page_top">
+          <div class="wcontent_inner">
+            <figure class="page_top_visual">
+              <img src="../images/content/tom_icon1.svg" alt="TOM FINANCE" />
+            </figure>
+            <p class="page_top_message">
+              <img src="../images/content/page_top_message_stake@3x.png" alt="Select your cat’s favorite!" />
+            </p>
+            <p class="page_top_text">Every time you stake and unstake LP tokens, <br />the contract will automagically harvest TOM rewards for you!</p>
+          </div>
+        </div>
+        <div class="content">
+          <div class="card_group tom_stake">
+            <div class="card">
+              <figure class="card_icon">
+                <img src="../images/content/visual.svg" alt="" />
+              </figure>
+              <span class="card_label" id="COF_EARN">-</span>
+              <p class="card_text">TOM Earned</p>
+              <div class="card_btns">
+                <a href="#;" class="btn btn_color-primary btn_round-medium2 btn_size-full is-disabled" id="harvestBtn" onclick="cof_harvest()"
+                  ><span>Harvest</span></a
+                >
+              </div>
+              <div class="card_bottom"></div>
+            </div>
+            <div class="card">
+              <figure class="card_icon">
+                <img src="../images/content/tom_icon1.svg" alt="" />
+              </figure>
+              <span class="card_label" id="Stake_LP">-</span>
+              <p class="card_text">TMTG-LBXC UNI-V2 LP Staked</p>
+              <div class="card_btns" id="isApp"></div>
+              <div class="card_bottom"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <footer>
+        <a href="https://etherscan.io/address/0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc">Contract</a>
+        <a href="https://discord.gg/T7Xgc8f">Discord</a>
+        <a href="">Telegram</a>
+        <a href="https://twitter.com/defi_tom">Twitter</a>
+        <a href="https://github.com/TomFinance">Github</a>
+        <a href="TOM_Finance_Litepaper_Ver2.0.0.pdf" target="_blank">Docs</a>
+      </footer>
+    </div>
+
+    <div class="popup-box" id="stake_pop">
+      <div class="mfp-bg mfp-ready"></div>
+      <div class="mfp-wrap mfp-close-btn-in mfp-auto-cursor mfp-ready" tabindex="-1" style="overflow: hidden auto">
+        <div class="mfp-container mfp-s-ready">
+          <div class="mfp-content">
+            <div class="popup_wrap popup1 popup-unstake">
+              <div class="popup_header"><h3>Stake</h3></div>
+              <div class="popup_content">
+                <p class="unstake_text" id="lp_balance"></p>
+                <div class="textfield is-unit">
+                  <div class="textfield-label textfield-hide"><label for="stake_amount">Stake</label></div>
+                  <div class="textfield-base">
+                    <div class="textfield-input"><input id="stake_amount" type="text" placeholder="" /></div>
+                    <div class="textfield-btns">
+                      <button type="button" class="textfield-btn textfield-btn-clear">Clear</button>
+                      <button type="button" class="textfield-btn textfield-btn-text" onclick="stake_max()">Max</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="popup_footer">
+                  <a href="#;" class="btn btn_color-black btn_round-medium1 btn_close"><span>Cancel</span></a>
+                  <a href="#;" class="btn btn_color-primary btn_round-medium1" onclick="cof_eth_lp_stake()"><span>Confirm</span></a>
+                </div>
+              </div>
+              <button title="Close (Esc)" type="button" class="mfp-close">×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-box" id="unstake_pop">
+      <div class="mfp-bg mfp-ready"></div>
+      <div class="mfp-wrap mfp-close-btn-in mfp-auto-cursor mfp-ready" tabindex="-1" style="overflow: hidden auto">
+        <div class="mfp-container mfp-s-ready">
+          <div class="mfp-content">
+            <div class="popup_wrap popup1 popup-unstake">
+              <div class="popup_header"><h3>Unstake</h3></div>
+              <div class="popup_content">
+                <p class="unstake_text" id="unstake_lp_balance"></p>
+                <div class="textfield is-unit">
+                  <div class="textfield-label textfield-hide"><label for="unstake_amount">Unstake</label></div>
+                  <div class="textfield-base">
+                    <div class="textfield-input"><input id="unstake_amount" type="text" placeholder="" /></div>
+                    <div class="textfield-btns">
+                      <button type="button" class="textfield-btn textfield-btn-clear">Clear</button>
+                      <button type="button" class="textfield-btn textfield-btn-text" onclick="unstake_max()">Max</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="popup_footer">
+                  <a href="#;" class="btn btn_color-black btn_round-medium1 btn_close"><span>Cancel</span></a>
+                  <a href="#;" class="btn btn_color-primary btn_round-medium1" onclick="cof_eth_lp_unstake()"><span>Confirm</span></a>
+                </div>
+              </div>
+              <button title="Close (Esc)" type="button" class="mfp-close">×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      $('#isApp').on('click', '.btn_popup', function (e) {
+        e.preventDefault();
+        var popup_id = this.href.split('#')[1];
+        $('#' + popup_id).css('display', 'block');
+        $(document.body).css('overflow', 'hidden');
+      });
+      $('.mfp-close, .btn_close').on('click', function (e) {
+        e.preventDefault();
+        $('.popup-box').css('display', 'none');
+        $(document.body).css('overflow', 'auto');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="robots" content="all" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>TOM FINANCE</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="../images/common/favicon/apple-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="../images/common/favicon/apple-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/common/favicon/apple-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="../images/common/favicon/apple-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/common/favicon/apple-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="../images/common/favicon/apple-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="../images/common/favicon/apple-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="../images/common/favicon/apple-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/common/favicon/apple-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../images/common/favicon/android-icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/common/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="../images/common/favicon/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../images/common/favicon/favicon-16x16.png" />
+    <link rel="manifest" href="../images/common/favicon/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="../images/common/favicon/ms-icon-144x144.png" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css?v=2020122101" />
+    <script src="../js/vendor.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="https://unpkg.com/web3@latest/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js"></script>
+    <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      Number.prototype.format = function () {
+        if (this == 0) return 0;
+
+        var reg = /(^[+-]?\d+)(\d{3})/;
+        var n = this + '';
+
+        while (reg.test(n)) n = n.replace(reg, '$1' + ',' + '$2');
+
+        return n;
+      };
+
+      String.prototype.format = function () {
+        var num = parseFloat(this);
+        if (isNaN(num)) return '0';
+
+        return num.format();
+      };
+      var setCookie = function (name, value, exp) {
+        var date = new Date();
+        date.setTime(date.getTime() + exp * 24 * 60 * 60 * 1000);
+        document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+      };
+
+      var getCookie = function (name) {
+        var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return value ? value[2] : null;
+      };
+
+      if (getCookie('metamask') == 'true') {
+        // loginCookie
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        getAccount();
+      }
+
+      function connectWallet() {
+        // connectWallet
+        web3 = new Web3('https://autumn-nameless-star.quiknode.pro/6c86198d7f732e383a21828e132f011704e8b174/');
+        web34 = new Web3(window.ethereum);
+
+        window.ethereum
+          .enable()
+          .then(function () {
+            setCookie('metamask', 'true', 1);
+            getAccount();
+          })
+          .catch((error) => {
+            // User denied account access
+            console.log(error);
+          });
+      }
+
+      function getAccount() {
+        //getAccount
+        web34.eth.getAccounts(function (err, r) {
+          let account_length = r[0].length;
+          let account_1 = r[0].substring(0, 4);
+          let account_2 = r[0].substring(account_length - 4, account_length);
+          document.getElementById('account_addr').innerHTML = account_1 + '...' + account_2;
+        });
+      }
+
+      //TMTG/LXBC_POOL ABI and Address for stake, unstake, harvest
+      const TMTG_LBXC_ABI = [
+        {
+          inputs: [
+            { internalType: 'string', name: '_name', type: 'string' },
+            { internalType: 'uint256', name: '_poolStart', type: 'uint256' },
+            { internalType: 'uint256', name: '_poolEnd', type: 'uint256' },
+            { internalType: 'uint256', name: '_rewardPerBlock', type: 'uint256' },
+            { internalType: 'address', name: '_rewardToken', type: 'address' },
+            { internalType: 'address', name: '_stakeToken', type: 'address' },
+            { internalType: 'address', name: '_teamPool', type: 'address' },
+          ],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'constructor',
+        },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'rate', type: 'uint256' }],
+          name: 'changeRewardRate',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'claimAllReward', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+          name: 'claimAndUnstake',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'emergencyExit', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryDeposit',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryExpectedReward',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [{ internalType: 'address', name: 'host', type: 'address' }],
+          name: 'inquiryRemainReward',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'name',
+          outputs: [{ internalType: 'string', name: '', type: 'string' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'poolEnd',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'poolStart',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'rewardPerBlock',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'rewardToken',
+          outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: false,
+          inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+          name: 'stake',
+          outputs: [],
+          payable: false,
+          stateMutability: 'nonpayable',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'stakeToken',
+          outputs: [{ internalType: 'contract IERC20', name: '', type: 'address' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: 'totalStaked',
+          outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+          payable: false,
+          stateMutability: 'view',
+          type: 'function',
+        },
+        { constant: false, inputs: [], name: 'unstakeAll', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' },
+      ];
+      const TMTG_LBXC_POOL = '0x2A70605e53a2a596E04df8A775E0e8C9fEd62F9a';
+
+      const TMTG_LBXC = new web3.eth.Contract(TMTG_LBXC_ABI, TMTG_LBXC_POOL);
+
+      async function calculateAPY(poolSymbol) {
+        const COFPairData = (
+          await callUniswap(`{
+								pair (id:"0x6b16a8e3697e9690cf17a9f5203e0ce1350b4ca6"){
+									id
+									reserve0
+									reserve1
+								}
+							}`)
+        ).pair; //tom/eth reserve0 -> ETH  reserve1 -> TOM
+        const LPPairData = (
+          await callUniswap(`{
+								pair (id:"0x096df24df15b00891b647b6ddbe3fc825841d090"){
+									id
+									totalSupply
+									reserveETH
+									token1Price
+								}
+							}`)
+        ).pair; //tmgeth
+        const LP1PairData = (
+          await callUniswap(`{
+								pair (id:"0x25ea93b7432fed90758828691897901a30b4c7d9"){
+									id
+									totalSupply
+									reserve0
+								}
+							}`)
+        ).pair; //tmtg/lbxc
+
+        const tom_price = COFPairData.reserve0 / COFPairData.reserve1;
+
+        //console.log("ETH Amount" + COFPairData.reserve0);
+        //console.log("TOM Amount" + COFPairData.reserve1);
+        //console.log("TOM Price " + COFPairData.reserve0 / COFPairData.reserve1);
+        //console.log("tmtg TOtal Supply " + LPPairData.totalSupply);
+        //console.log("tmtg reserve eth " + LPPairData.reserveETH);
+        //console.log("tmtg/lbxc TOtal Supply " + LP1PairData.totalSupply); //tmtg/lbxc lp total
+        //console.log("tmtg/lbxc reserve0 " + LP1PairData.reserve0); // tmtg/lbxc tmtg amount
+        //console.log("token1price " + LPPairData.token1Price); // tmtg price
+
+        if ((await readContract(poolSymbol, 'totalStaked')) == 0) {
+          return 'Infinity';
+        }
+
+        const PPB =
+          (tom_price * (await readContract(poolSymbol, 'rewardPerBlock'))) /
+          (await readContract(poolSymbol, 'totalStaked')) /
+          (LPPairData.token1Price * ((LP1PairData.reserve0 * 2) / LP1PairData.totalSupply));
+        return (((PPB * 86400 * 365) / 13) * 100).toFixed(2).format();
+      }
+      async function readContract(poolSymbol, field) {
+        if (poolSymbol == 'TMTG_LBXC') {
+          switch (field) {
+            case 'totalStaked':
+              return TMTG_LBXC.methods.totalStaked().call(); // lp total stkae amount
+            case 'rewardPerBlock':
+              return TMTG_LBXC.methods.rewardPerBlock().call();
+          }
+        }
+      }
+      function callUniswap(query) {
+        return new Promise((resolve) => {
+          axios({
+            url: 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
+            method: 'post',
+            data: {
+              query,
+            },
+          }).then((res) => {
+            resolve(res.data.data);
+          });
+        });
+      }
+
+      window.onload = async function () {
+        console.log('IM.here');
+        document.getElementById('tmtg_lbxc').innerHTML = (await calculateAPY('TMTG_LBXC')) + '%';
+        //	console.log(await calculateAPY("TMTG-ETH"))
+        //	console.log(await calculateAPY("REP-ETH"))
+        //	Console.log(await calculateAPY("MX-ETH"))
+      };
+    </script>
+  </head>
+  <body>
+    <div id="wrap" class="sub">
+      <header>
+        <div class="h_inner">
+          <h1><a href="index.html">TOM FINANCE</a></h1>
+          <nav>
+            <button type="button" class="gnb-menu">
+              <span>navigation</span>
+              <span>menu</span>
+              <span>open/close</span>
+            </button>
+            <div class="mb_hidden">
+              <ul>
+                <li><a href="index.html">HOME</a></li>
+                <li class="on"><a href="farm.html">FARM</a></li>
+                <li><a href="https://medium.com/defi-tom/tom-touch-of-midas-finance-liquidity-mining-80e9e720cdd3" rel="noopener noreferrer">ABOUT</a></li>
+              </ul>
+              <div class="h_utills">
+                <!-- <div class="lang">
+                  <a href="#;" class="cnt en">EN</a>
+                  <div>
+                    <a href="#;" class="ko">KO</a>
+                    <a href="#;" class="cn">CN</a>
+                    <a href="ㅑ" class="en">EN</a>
+                  </div>
+                </div> -->
+                <a href="#;" class="btn btn_color-primary btn_round-medium1 btn_wallet" id="account_addr" onclick="connectWallet()">Unlock Wallet</a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </header>
+      <main id="container">
+        <div class="wcontent page_top">
+          <div class="wcontent_inner">
+            <figure class="page_top_visual">
+              <img src="../images/content/visual.svg" alt="TOM FINANCE" />
+            </figure>
+            <p class="page_top_message">
+              <img src="../images/content/page_top_message_farm@3x.png" alt="Select your cat’s favorite!" />
+            </p>
+            <p class="page_top_text">Stake LP tokens to get TOM!</p>
+          </div>
+        </div>
+        <div class="content">
+          <div class="card_group tom_pool">
+            <div class="card">
+              <figure class="card_icon">
+                <img src="../images/content/tom_icon1.svg" alt="" />
+              </figure>
+              <span class="card_label">TMTG/LBXC Pool</span>
+              <p class="card_text">Deposit TMTG-LBXC UNI-V2 LP Earn TOM</p>
+              <div class="card_btns">
+                <a href="tmtg_lbxc.html" class="btn btn_color-primary btn_round-medium2 btn_size-full"><span>Select</span></a>
+              </div>
+              <div class="card_status_info">
+                <span>APY</span>
+                <i id="tmtg_lbxc">-</i>
+              </div>
+            </div>
+            <div class="card card_coming card_coming-tom_tm">
+              <figure class="card_icon">
+                <img src="../images/content/tom_icon2.svg" alt="" />
+              </figure>
+              <span class="card_label">TOM/TMTG Pool</span>
+              <p class="card_text">Deposit TOM-TMTG UNI-V2 LP Earn TOM</p>
+              <div class="card_btns card_btn_comingsoon">
+                <span class="btn btn_color-primary is-disabled btn_round-medium2 btn_size-full">COMING SOON</span>
+              </div>
+              <div class="card_status_info">
+                <span>APY</span>
+                <i>-</i>
+              </div>
+            </div>
+            <div class="card card_coming card_coming-tom_lb">
+              <figure class="card_icon">
+                <img src="../images/content/tom_icon3.svg" alt="" />
+              </figure>
+              <span class="card_label">TOM/LBXC Pool</span>
+              <p class="card_text">Deposit TOM-LBXC UNI-V2 LP Earn TOM</p>
+              <div class="card_btns card_btn_comingsoon">
+                <span class="btn btn_color-primary is-disabled btn_round-medium2 btn_size-full">COMING SOON</span>
+              </div>
+              <div class="card_status_info">
+                <span>APY</span>
+                <i>-</i>
+              </div>
+            </div>
+          </div>
+
+          <div class="txt_wrap" style="margin-top: 150px">
+            Caution: This address is the smart contract address, NOT the coin transfer address.<br />
+            If you send coin to this address, we cannot retreive your transfer.
+          </div>
+          <div class="txt_wrap" style="margin-top: 30px">
+            <a href="#;">TMTG : 0x10086399dd8c1e3de736724af52587a2044c9fa2</a>
+            <a href="#;">LBXC : 0xffe510a92434a0df346c5e72a3494b043cf249eb</a>
+            <a href="#;">TOM : 0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc</a>
+          </div>
+        </div>
+      </main>
+      <footer>
+        <a href="https://etherscan.io/address/0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc">Contract</a>
+        <a href="https://discord.gg/T7Xgc8f">Discord</a>
+        <a href="">Telegram</a>
+        <a href="https://twitter.com/defi_tom">Twitter</a>
+        <a href="https://github.com/TomFinance">Github</a>
+        <a href="TOM_Finance_Litepaper_Ver2.0.0.pdf" target="_blank">Docs</a>
+      </footer>
+    </div>
+    <script>
+      function copyToClipboard(val) {
+        var t = document.createElement('textarea');
+        document.body.appendChild(t);
+        t.value = val;
+        t.select();
+        document.execCommand('copy');
+        document.body.removeChild(t);
+      }
+
+      $('.txt_wrap > a').each(function () {
+        $(this).on('click', function () {
+          if ($(this).text() == 'TMTG : 0x10086399dd8c1e3de736724af52587a2044c9fa2') {
+            copyToClipboard('0x10086399dd8c1e3de736724af52587a2044c9fa2');
+            alert('Copy Complete!');
+          } else {
+            if ($(this).text() == 'LBXC : 0xffe510a92434a0df346c5e72a3494b043cf249eb') {
+              copyToClipboard('0xffe510a92434a0df346c5e72a3494b043cf249eb');
+              alert('Copy Complete!');
+            } else {
+              copyToClipboard('0xF7970499814654CD13Cb7B6E7634A12a7A8A9ABc');
+              alert('Copy Complete!');
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

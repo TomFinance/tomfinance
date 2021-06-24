@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "start": "./node_modules/.bin/browser-sync start --server"
+  },
+  "dependencies": {
+    "browser-sync": "^2.26.13",
+    "eslint": "^7.15.0",
+    "eslint-config-prettier": "^7.0.0",
+    "jshint": "^2.12.0",
+    "prettier": "^2.2.1"
+  },
+  "license": "UNLICENSED"
+}

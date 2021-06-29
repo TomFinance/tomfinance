@@ -431,10 +431,11 @@
 
       .popup {
         margin: calc(50vh - 200px) auto;
-        padding: 40px;
+        padding: 0;
         background: #fff;
-        border-radius: 5px;
-        width: 30%;
+        border-radius: 0;
+        width: calc(100% - 60px);
+        max-width: 960px;
         position: relative;
         transition: all 5s ease-in-out;
       }
@@ -445,11 +446,13 @@
         margin-top: 0;
         color: #333;
       }
-      .popup .close {
+      .overlay .close {
         position: absolute;
-        top: 20px;
-        right: 30px;
-        transition: all 200ms;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: block;
         font-size: 30px;
         font-weight: bold;
         text-decoration: none;
@@ -471,22 +474,18 @@
           width: 70%;
         }
         .popup {
-          width: 70%;
+          width: calc(100% - 40px);
         }
       }
     </style>
     <div id="popup1" class="overlay">
+      <a class="close" href="#">&times;</a>
       <div class="popup">
-        <h2>TOM Mining Closed</h2>
-        <a class="close" href="#">&times;</a>
-        <div class="content">
-          TOM token mining has ended on Jan. 13, 2021.<br />
-          <br />To participate in TOM2 token mining, go to TOMSwap platform.<br />
-          TOM2 mining will be conducted for 60 days, starting from Jan. 14.
-          <br />
-          <br />
-          Go to TOM2 mining <a href="http://www.tomswap.org/" target="_blank" rel="noopener noreferrer">http://www.tomswap.org/</a>
-        </div>
+        <a href="https://go.latoken.com/64c" target="_blank" rel="noreferrer noopener">
+          <figure class="popup-latoken">
+            <img src="../images/tom-latoken.jpg" alt="tom latoken" />
+          </figure>
+        </a>
       </div>
     </div>
     <script>
